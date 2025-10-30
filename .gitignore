@@ -1,0 +1,42 @@
+# Ejecutables y Binarios
+kernel-sim
+*.exe
+*.out
+*.app
+*.bin
+
+
+# Archivos de Compilación
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+
+
+# CMake
+build/
+Build/
+BUILD/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Depuración
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Archivos Temporales
+*.tmp
+*.temp
+*.bak
+*.log
+*.cache

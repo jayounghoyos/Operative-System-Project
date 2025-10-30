@@ -1,0 +1,104 @@
+# DEMO COMPLETO - Simulador de Kernel
+# Seguir estos comandos para simular nuestro Kernel
+
+# PARTE 1: CPU SCHEDULING
+# Crear varios procesos para poblar la cola Round Robin (PCB con burst, estado y métricas).
+new 10
+new 8
+new 5
+
+# Inspeccionar la tabla de procesos y validar que el PCB registre estados/esperas.
+ps
+
+# Simular ticks individuales para observar cambios de estado y fairness manualmente.
+tick
+tick
+tick
+
+# Ejecutar varios ticks seguidos para demostrar la rotación automática con quantum fijo.
+run 15
+
+# Revisar de nuevo los procesos para comprobar turnaround/espera actualizados.
+ps
+
+# Mostrar estadísticas agregadas (espera/turnaround promedio) y revisar fairness.
+cpu-stats
+
+
+# PARTE 2: MEMORY MANAGEMENT
+# Inicializar la memoria física con 4 marcos disponibles.
+mem-init 4
+
+# Acceder a páginas del proceso 1 para llenar la tabla y generar hits cuando se repitan.
+mem-access 1 0
+mem-access 1 1
+mem-access 1 2
+mem-access 1 3
+
+# Forzar un page fault cuando todos los marcos estén ocupados y activar FIFO.
+mem-access 1 4
+
+# Visualizar los marcos físicos con su estado (requisito de tablero ASCII).
+mem-frames
+
+# Consultar la tabla de páginas por proceso para ver qué páginas siguen válidas.
+mem-table 1
+
+# Incorporar otro proceso para evidenciar reparto de marcos y más fallos/hits.
+mem-access 2 0
+mem-access 2 1
+
+# Mostrar estadísticas totales de accesos, hits y faults (quedan pendientes PFF/latencia).
+mem-stats
+
+
+# PARTE 3: SYNCHRONIZATION
+# Inicializar el buffer circular para el problema productor–consumidor.
+pc-init 3
+
+# Insertar elementos hasta llenar el buffer (uso de mutex/condvars).
+produce 100
+produce 200
+produce 300
+
+# Revisar la representación ASCII del buffer y los punteros IN/OUT.
+pc-buffer
+
+# Intentar producir otro elemento para mostrar el conteo de bloqueos de productor.
+produce 400
+
+# Consumir elementos y verificar cómo se actualizan índices y contadores.
+consume
+consume
+
+# Revisar nuevamente el buffer para ver huecos y punteros actualizados.
+pc-buffer
+
+# Volver a producir para equilibrar el buffer y generar más estadísticas.
+produce 400
+produce 500
+
+# Consultar el resumen de operaciones y bloqueos (balance correcto).
+pc-stats
+
+
+# PARTE 4: INTEGRACIÓN COMPLETA
+
+
+# Crear otro proceso mientras memoria y sync siguen activos.
+new 12
+run 20
+
+# Revisar resultados globales de CPU, memoria y sincronización.
+ps
+mem-frames
+pc-buffer
+
+# Cerrar con estadísticas de cada módulo para validar métricas finales.
+cpu-stats
+mem-stats
+pc-stats
+
+
+# Escribe 'exit' para salir
+# Muchas gracias!
