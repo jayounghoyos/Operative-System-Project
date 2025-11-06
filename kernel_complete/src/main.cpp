@@ -35,17 +35,20 @@ void print_help()
     std::cout << "  tick              - Ejecutar 1 tick\n";
     std::cout << "  run <n>           - Ejecutar N ticks\n";
     std::cout << "  kill <pid>        - Terminar proceso\n";
+    std::cout << "  suspend <pid>     - Suspender proceso (estado BLOCKED)\n";
+    std::cout << "  resume <pid>      - Reanudar proceso suspendido\n";
     std::cout << "  cpu-stats         - Estadísticas del scheduler\n";
 
     std::cout << "\n"
               << Color::YELLOW << " MEMORY MANAGEMENT " << Color::RESET << std::endl;
-    std::cout << "  mem-init <frames> [fifo|lru] - Inicializar memoria (por defecto FIFO)\n";
-    std::cout << "  mem-policy <fifo|lru>        - Cambiar política de reemplazo\n";
-    std::cout << "  mem-access <pid> <page>      - Acceder a página\n";
-    std::cout << "  mem-frames                   - Ver estado de frames\n";
-    std::cout << "  mem-table <pid>              - Ver page table de proceso\n";
-    std::cout << "  mem-stats                    - Estadísticas de memoria\n";
-    std::cout << "  mem-reset                    - Reiniciar estadísticas\n";
+    std::cout << "  mem-init <frames> [fifo|lru|pff] - Inicializar memoria (por defecto FIFO)\n";
+    std::cout << "  mem-policy <fifo|lru|pff>        - Cambiar política de reemplazo\n";
+    std::cout << "  mem-access <pid> <page>          - Acceder a página\n";
+    std::cout << "  mem-frames                       - Ver estado de frames\n";
+    std::cout << "  mem-table <pid>                  - Ver page table de proceso\n";
+    std::cout << "  mem-stats                        - Estadísticas de memoria\n";
+    std::cout << "  mem-pff-stats                    - Estadísticas PFF (gestión avanzada)\n";
+    std::cout << "  mem-reset                        - Reiniciar estadísticas\n";
 
     std::cout << "\n"
               << Color::YELLOW << " SYNCHRONIZATION " << Color::RESET << std::endl;
@@ -183,6 +186,32 @@ int main()
                               << Color::RESET << std::endl;
                 }
             }
+            else if (command == "suspend")
+            {
+                int pid;
+                if (iss >> pid)
+                {
+                    scheduler->suspend_process(pid);
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: suspend <pid>"
+                              << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "resume")
+            {
+                int pid;
+                if (iss >> pid)
+                {
+                    scheduler->resume_process(pid);
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: resume <pid>"
+                              << Color::RESET << std::endl;
+                }
+            }
             else if (command == "cpu-stats")
             {
                 scheduler->show_stats();
@@ -200,6 +229,8 @@ int main()
                             memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::FIFO);
                         else if (pol == "lru" || pol == "LRU")
                             memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::LRU);
+                        else if (pol == "pff" || pol == "PFF")
+                            memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::PFF);
                         else
                         {
                             std::cout << Color::YELLOW << "Política no reconocida, usando FIFO"
@@ -214,7 +245,7 @@ int main()
                 }
                 else
                 {
-                    std::cout << Color::RED << "Uso: mem-init <frames> [fifo|lru]"
+                    std::cout << Color::RED << "Uso: mem-init <frames> [fifo|lru|pff]"
                               << Color::RESET << std::endl;
                 }
             }
@@ -232,11 +263,12 @@ int main()
                     {
                         if (pol == "fifo" || pol == "FIFO") memory->set_policy(ReplacementPolicy::FIFO);
                         else if (pol == "lru" || pol == "LRU") memory->set_policy(ReplacementPolicy::LRU);
-                        else std::cout << Color::RED << "Uso: mem-policy <fifo|lru>" << Color::RESET << std::endl;
+                        else if (pol == "pff" || pol == "PFF") memory->set_policy(ReplacementPolicy::PFF);
+                        else std::cout << Color::RED << "Uso: mem-policy <fifo|lru|pff>" << Color::RESET << std::endl;
                     }
                     else
                     {
-                        std::cout << Color::RED << "Uso: mem-policy <fifo|lru>" << Color::RESET << std::endl;
+                        std::cout << Color::RED << "Uso: mem-policy <fifo|lru|pff>" << Color::RESET << std::endl;
                     }
                 }
             }
@@ -302,6 +334,18 @@ int main()
                 else
                 {
                     memory->display_stats();
+                }
+            }
+            else if (command == "mem-pff-stats")
+            {
+                if (!memory)
+                {
+                    std::cout << Color::RED << "Error: Memoria no inicializada"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    memory->display_pff_stats();
                 }
             }
             else if (command == "mem-reset")
