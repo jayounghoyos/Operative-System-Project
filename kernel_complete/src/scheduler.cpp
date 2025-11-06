@@ -4,9 +4,9 @@
 #include <iomanip>
 #include <algorithm>
 
-// =========================
-// ROUND ROBIN (ya existente)
-// =========================
+
+// ROUND ROBIN
+
 
 RoundRobinScheduler::RoundRobinScheduler(int quantum)
     : quantum_(quantum),
@@ -190,9 +190,9 @@ void RoundRobinScheduler::kill_process(int pid) {
     }
 }
 
-// ============================
-// SJF NO EXPROPIATIVO (nuevo)
-// ============================
+
+// SJF NO EXPROPIATIVO
+
 
 SJFScheduler::SJFScheduler()
     : current_process_(nullptr), next_pid_(1), current_time_(0) {}

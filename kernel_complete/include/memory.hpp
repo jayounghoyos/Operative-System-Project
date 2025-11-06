@@ -46,7 +46,7 @@ public:
     // Reset stats
     void reset_stats();
 
-    // Cambiar política en caliente (opcional)
+    // Cambiar política en caliente
     void set_policy(ReplacementPolicy p);
     ReplacementPolicy get_policy() const { return policy_; }
 

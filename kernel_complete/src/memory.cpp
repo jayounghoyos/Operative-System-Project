@@ -295,7 +295,7 @@ void MemoryManager::reset_stats() {
               << Color::RESET << std::endl;
 }
 
-/* ===================== LRU helpers ===================== */
+/* LRU helpers */
 
 void MemoryManager::lru_touch(int frame_id) const {
     auto it = lru_pos_.find(frame_id);

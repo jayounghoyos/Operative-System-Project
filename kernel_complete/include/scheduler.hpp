@@ -7,10 +7,8 @@
 #include <memory>
 #include <functional>
 
-// -----------------------------------------------------------------------------
-// Interfaz común (opcional) para planificadores.
-// Puedes usar punteros a IScheduler en main.cpp para alternar RR/SJF.
-// -----------------------------------------------------------------------------
+
+// Interfaz común para planificadores.
 class IScheduler {
 public:
     virtual ~IScheduler() = default;
@@ -31,9 +29,7 @@ public:
     virtual int get_current_time() const = 0;
 };
 
-// -----------------------------------------------------------------------------
-// ROUND ROBIN (tu implementación original; mantiene la misma API pública)
-// -----------------------------------------------------------------------------
+// ROUND ROBIN
 class RoundRobinScheduler : public IScheduler {
 public:
     explicit RoundRobinScheduler(int quantum);
@@ -69,11 +65,9 @@ private:
     void preempt_current();
 };
 
-// -----------------------------------------------------------------------------
 // SJF NO EXPROPIATIVO
 //  - Selecciona siempre el proceso con MENOR remaining_time cuando la CPU queda libre.
 //  - No expulsa al proceso actual hasta que termine.
-// -----------------------------------------------------------------------------
 class SJFScheduler : public IScheduler {
 public:
     SJFScheduler();
