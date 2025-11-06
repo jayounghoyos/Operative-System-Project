@@ -1,0 +1,9 @@
+cpu-rr 3
+new 5
+new 4
+ps
+run 3
+ps
+run 3
+cpu-stats
+exit

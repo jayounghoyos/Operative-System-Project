@@ -1,0 +1,9 @@
+mem-init 3 fifo
+mem-access 1 0
+mem-access 1 1
+mem-access 2 0
+mem-frames
+mem-access 1 2
+mem-frames
+mem-stats
+exit

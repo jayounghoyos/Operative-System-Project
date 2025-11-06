@@ -1,0 +1,9 @@
+mem-init 3 lru
+mem-access 1 0
+mem-access 1 1
+mem-access 1 2
+mem-access 1 0 
+mem-access 2 9 
+mem-frames
+mem-stats
+exit

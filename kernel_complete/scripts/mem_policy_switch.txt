@@ -1,0 +1,8 @@
+mem-init 2 fifo
+mem-access 1 0
+mem-access 1 1
+mem-policy lru
+mem-access 2 0 # reemplazo bajo LRU
+mem-frames
+mem-stats
+exit

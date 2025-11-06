@@ -1,0 +1,8 @@
+cpu-sjf
+new 7
+new 2
+new 5
+ps
+run 20
+cpu-stats
+exit
