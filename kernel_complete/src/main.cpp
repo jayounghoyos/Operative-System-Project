@@ -14,8 +14,8 @@ void print_banner()
 ║        SIMULADOR DE KERNEL - SISTEMA OPERATIVO           ║
 ║                                                          ║
 ║  Módulos:                                                ║
-║    • CPU Scheduling (Round Robin)                        ║
-║    • Memory Management (FIFO)                            ║
+║    • CPU Scheduling (Round Robin / SJF)                  ║
+║    • Memory Management (FIFO / LRU)                      ║
 ║    • Synchronization (Producer-Consumer)                 ║
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
@@ -28,6 +28,8 @@ void print_help()
     print_header("COMANDOS DISPONIBLES");
 
     std::cout << Color::YELLOW << " CPU SCHEDULING " << Color::RESET << std::endl;
+    std::cout << "  cpu-rr <q>        - Usar Round Robin con quantum q\n";
+    std::cout << "  cpu-sjf           - Usar SJF no expropiativo\n";
     std::cout << "  new <burst>       - Crear proceso con tiempo de ráfaga\n";
     std::cout << "  ps                - Listar todos los procesos\n";
     std::cout << "  tick              - Ejecutar 1 tick\n";
@@ -37,12 +39,13 @@ void print_help()
 
     std::cout << "\n"
               << Color::YELLOW << " MEMORY MANAGEMENT " << Color::RESET << std::endl;
-    std::cout << "  mem-init <frames> - Inicializar memoria\n";
-    std::cout << "  mem-access <pid> <page> - Acceder a página\n";
-    std::cout << "  mem-frames        - Ver estado de frames\n";
-    std::cout << "  mem-table <pid>   - Ver page table de proceso\n";
-    std::cout << "  mem-stats         - Estadísticas de memoria\n";
-    std::cout << "  mem-reset         - Reiniciar estadísticas\n";
+    std::cout << "  mem-init <frames> [fifo|lru] - Inicializar memoria (por defecto FIFO)\n";
+    std::cout << "  mem-policy <fifo|lru>        - Cambiar política de reemplazo\n";
+    std::cout << "  mem-access <pid> <page>      - Acceder a página\n";
+    std::cout << "  mem-frames                   - Ver estado de frames\n";
+    std::cout << "  mem-table <pid>              - Ver page table de proceso\n";
+    std::cout << "  mem-stats                    - Estadísticas de memoria\n";
+    std::cout << "  mem-reset                    - Reiniciar estadísticas\n";
 
     std::cout << "\n"
               << Color::YELLOW << " SYNCHRONIZATION " << Color::RESET << std::endl;
@@ -66,11 +69,11 @@ int main()
     print_banner();
 
     // Inicializar módulos
-    std::unique_ptr<RoundRobinScheduler> scheduler = nullptr;
+    std::unique_ptr<IScheduler> scheduler = nullptr;
     std::unique_ptr<MemoryManager> memory = nullptr;
     std::unique_ptr<ProducerConsumer> pc_buffer = nullptr;
 
-    // Configuración por defecto
+    // Configuración por defecto: Round Robin (q=3)
     int default_quantum = 3;
     scheduler = std::make_unique<RoundRobinScheduler>(default_quantum);
     std::cout << Color::GREEN << "[CPU] Scheduler Round Robin inicializado (quantum="
@@ -108,6 +111,28 @@ int main()
             {
                 system("clear || cls");
                 print_banner();
+            }
+
+            //  CAMBIO DE ALGORITMO DE CPU
+            else if (command == "cpu-rr")
+            {
+                int q;
+                if (iss >> q && q > 0)
+                {
+                    scheduler = std::make_unique<RoundRobinScheduler>(q);
+                    std::cout << Color::GREEN << "[CPU] Cambiado a Round Robin (q=" << q << ")"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: cpu-rr <quantum>" << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "cpu-sjf")
+            {
+                scheduler = std::make_unique<SJFScheduler>();
+                std::cout << Color::GREEN << "[CPU] Cambiado a SJF (no expropiativo)"
+                          << Color::RESET << std::endl;
             }
 
             //  CPU SCHEDULING
@@ -166,15 +191,53 @@ int main()
             //  MEMORY MANAGEMENT
             else if (command == "mem-init")
             {
-                int frames;
-                if (iss >> frames && frames > 0)
+                int frames; std::string pol;
+                if ((iss >> frames) && frames > 0)
                 {
-                    memory = std::make_unique<MemoryManager>(frames);
+                    if (iss >> pol)
+                    {
+                        if (pol == "fifo" || pol == "FIFO")
+                            memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::FIFO);
+                        else if (pol == "lru" || pol == "LRU")
+                            memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::LRU);
+                        else
+                        {
+                            std::cout << Color::YELLOW << "Política no reconocida, usando FIFO"
+                                      << Color::RESET << std::endl;
+                            memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::FIFO);
+                        }
+                    }
+                    else
+                    {
+                        memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::FIFO);
+                    }
                 }
                 else
                 {
-                    std::cout << Color::RED << "Error: frames debe ser > 0"
+                    std::cout << Color::RED << "Uso: mem-init <frames> [fifo|lru]"
                               << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "mem-policy")
+            {
+                if (!memory)
+                {
+                    std::cout << Color::RED << "Error: Memoria no inicializada"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    std::string pol;
+                    if (iss >> pol)
+                    {
+                        if (pol == "fifo" || pol == "FIFO") memory->set_policy(ReplacementPolicy::FIFO);
+                        else if (pol == "lru" || pol == "LRU") memory->set_policy(ReplacementPolicy::LRU);
+                        else std::cout << Color::RED << "Uso: mem-policy <fifo|lru>" << Color::RESET << std::endl;
+                    }
+                    else
+                    {
+                        std::cout << Color::RED << "Uso: mem-policy <fifo|lru>" << Color::RESET << std::endl;
+                    }
                 }
             }
             else if (command == "mem-access")
@@ -300,7 +363,7 @@ int main()
                 int item;
                 if (pc_buffer->consume(item))
                 {
-                    // Éxito ya reportado en la función
+                    // Mensaje ya mostrado dentro de consume()
                 }
             }
             else if (command == "pc-buffer")
