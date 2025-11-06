@@ -27,7 +27,8 @@ struct PageTableEntry {
 // Algoritmos de reemplazo soportados
 enum class ReplacementPolicy {
     FIFO,
-    LRU
+    LRU,
+    PFF  // Page Fault Frequency - gestión avanzada
 };
 
 class MemoryManager {
@@ -49,6 +50,10 @@ public:
     // Cambiar política en caliente
     void set_policy(ReplacementPolicy p);
     ReplacementPolicy get_policy() const { return policy_; }
+
+    // PFF-specific operations
+    void display_pff_stats() const;
+    int get_process_frame_count(int process_id) const;
 
 private:
     int num_frames_;                                    // Cantidad de frames
@@ -83,6 +88,32 @@ private:
     void lru_touch(int frame_id) const; // mover frame a frente (más reciente)
     void lru_erase(int frame_id) const; // quitar frame de estructuras LRU
     void lru_add(int frame_id) const;   // insertar frame como más reciente
+
+    // PFF (Page Fault Frequency) - Gestión avanzada
+    struct PFFProcessInfo {
+        int allocated_frames;      // Frames asignados actualmente
+        int min_frames;            // Mínimo de frames (working set mínimo)
+        int max_frames;            // Máximo de frames permitido
+        int recent_faults;         // Fallos en ventana actual
+        int recent_accesses;       // Accesos en ventana actual
+        int window_start_time;     // Inicio de ventana de medición
+        double fault_rate;         // Tasa de fallos calculada
+    };
+
+    std::map<int, PFFProcessInfo> pff_process_info_;  // Info PFF por proceso
+    int pff_window_size_;          // Tamaño de ventana de medición (accesos)
+    double pff_upper_threshold_;   // Umbral superior (e.g., 0.6 = 60% fallos)
+    double pff_lower_threshold_;   // Umbral inferior (e.g., 0.1 = 10% fallos)
+    int pff_min_frames_per_process_; // Mínimo frames por proceso
+    int pff_max_frames_per_process_; // Máximo frames por proceso
+
+    // PFF helpers
+    void pff_initialize_process(int process_id);
+    bool pff_update_stats(int process_id, bool was_fault);
+    void pff_adjust_allocation(int process_id);
+    int select_victim_pff(int process_id);
+    bool pff_can_allocate_frame(int process_id) const;
+    int pff_reclaim_frame_from_process(int receiver_pid);
 };
 
 #endif // MEMORY_HPP

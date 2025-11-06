@@ -16,6 +16,8 @@ public:
     // Gestión de procesos
     virtual void create_process(int burst_time) = 0;
     virtual void kill_process(int pid) = 0;
+    virtual void suspend_process(int pid) = 0;
+    virtual void resume_process(int pid) = 0;
 
     // Ejecución
     virtual void tick() = 0;     // Ejecutar 1 unidad de tiempo
@@ -37,6 +39,8 @@ public:
     // Gestión de procesos
     void create_process(int burst_time) override;
     void kill_process(int pid) override;
+    void suspend_process(int pid) override;
+    void resume_process(int pid) override;
     
     // Ejecución
     void tick() override;           // Ejecutar 1 unidad de tiempo
@@ -75,6 +79,8 @@ public:
     // Gestión de procesos
     void create_process(int burst_time) override;
     void kill_process(int pid) override;
+    void suspend_process(int pid) override;
+    void resume_process(int pid) override;
 
     // Ejecución
     void tick() override;     // Ejecuta 1 unidad (sin expulsión)

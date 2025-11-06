@@ -1,0 +1,241 @@
+# ============================================================================
+# DEMOSTRACIÓN: PFF (Page Fault Frequency) - Gestión Avanzada de Memoria
+# ============================================================================
+#
+# PFF es un algoritmo avanzado que ajusta dinámicamente el número de frames
+# asignados a cada proceso basándose en su tasa de fallos de página.
+#
+# Ventajas de PFF:
+# - Previene thrashing (exceso de swapping)
+# - Optimiza uso de memoria entre procesos
+# - Balance automático entre procesos con diferentes working sets
+#
+# Configuración por defecto:
+#   - Ventana de medición: 10 accesos
+#   - Umbral superior: 60% (si supera, aumentar frames)
+#   - Umbral inferior: 10% (si baja, reducir frames)
+#   - Frames mínimo: 2 por proceso
+#   - Frames máximo: 50% del total
+# ============================================================================
+
+clear
+
+# ----------------------------------------------------------------------------
+# PARTE 1: Inicialización con PFF
+# ----------------------------------------------------------------------------
+mem-init 8 pff
+
+# Verificar configuración
+help
+
+# ----------------------------------------------------------------------------
+# PARTE 2: Proceso con ALTA tasa de fallos (necesita más frames)
+# ----------------------------------------------------------------------------
+# Simulamos un proceso que accede a muchas páginas diferentes
+# Esto causará alta tasa de fallos y PFF debería aumentar frames
+
+mem-access 1 0
+mem-access 1 1
+mem-access 1 2
+mem-access 1 3
+mem-access 1 4
+mem-access 1 5
+mem-access 1 6
+mem-access 1 7
+mem-access 1 8
+mem-access 1 9
+
+# Ver estadísticas PFF del proceso 1
+mem-pff-stats
+
+# Ver estado de frames
+mem-frames
+
+# ----------------------------------------------------------------------------
+# PARTE 3: Proceso con BAJA tasa de fallos (puede liberar frames)
+# ----------------------------------------------------------------------------
+# Simulamos un proceso con buen locality (accede las mismas páginas)
+# Esto causará baja tasa de fallos y PFF debería reducir frames
+
+mem-access 2 0
+mem-access 2 1
+mem-access 2 0
+mem-access 2 1
+mem-access 2 0
+mem-access 2 1
+mem-access 2 0
+mem-access 2 1
+mem-access 2 0
+mem-access 2 1
+
+# Ver estadísticas PFF - debería mostrar:
+# P1: ALTA tasa de fallos (necesita frames)
+# P2: BAJA tasa de fallos (puede liberar frames)
+mem-pff-stats
+
+# Ver distribución de frames
+mem-frames
+
+# ----------------------------------------------------------------------------
+# PARTE 4: Comparación con FIFO y LRU
+# ----------------------------------------------------------------------------
+
+# Reiniciar con FIFO
+mem-init 8 fifo
+
+# Mismo patrón de acceso (Proceso 1 - alta tasa)
+mem-access 1 0
+mem-access 1 1
+mem-access 1 2
+mem-access 1 3
+mem-access 1 4
+mem-access 1 5
+mem-access 1 6
+mem-access 1 7
+mem-access 1 8
+mem-access 1 9
+
+mem-stats
+
+# Reiniciar con LRU
+mem-init 8 lru
+
+# Mismo patrón de acceso
+mem-access 1 0
+mem-access 1 1
+mem-access 1 2
+mem-access 1 3
+mem-access 1 4
+mem-access 1 5
+mem-access 1 6
+mem-access 1 7
+mem-access 1 8
+mem-access 1 9
+
+mem-stats
+
+# Volver a PFF para comparación
+mem-init 8 pff
+
+mem-access 1 0
+mem-access 1 1
+mem-access 1 2
+mem-access 1 3
+mem-access 1 4
+mem-access 1 5
+mem-access 1 6
+mem-access 1 7
+mem-access 1 8
+mem-access 1 9
+
+mem-pff-stats
+
+# ----------------------------------------------------------------------------
+# PARTE 5: Cambio dinámico de working set
+# ----------------------------------------------------------------------------
+
+mem-init 8 pff
+
+# Proceso 1 empieza con working set pequeño (baja tasa)
+mem-access 1 0
+mem-access 1 1
+mem-access 1 0
+mem-access 1 1
+mem-access 1 0
+mem-access 1 1
+mem-access 1 0
+mem-access 1 1
+mem-access 1 0
+mem-access 1 1
+
+mem-pff-stats
+
+# Proceso 1 cambia a working set grande (alta tasa)
+# PFF debería detectar el cambio y aumentar frames
+mem-access 1 2
+mem-access 1 3
+mem-access 1 4
+mem-access 1 5
+mem-access 1 6
+mem-access 1 7
+mem-access 1 8
+mem-access 1 9
+mem-access 1 10
+mem-access 1 11
+
+mem-pff-stats
+
+# ----------------------------------------------------------------------------
+# PARTE 6: Multiprocesamiento con PFF
+# ----------------------------------------------------------------------------
+
+mem-init 12 pff
+
+# Proceso 1: Working set grande (necesita muchos frames)
+mem-access 1 0
+mem-access 1 1
+mem-access 1 2
+mem-access 1 3
+mem-access 1 4
+mem-access 1 5
+mem-access 1 6
+mem-access 1 7
+mem-access 1 8
+mem-access 1 9
+
+# Proceso 2: Working set mediano
+mem-access 2 0
+mem-access 2 1
+mem-access 2 2
+mem-access 2 3
+mem-access 2 0
+mem-access 2 1
+mem-access 2 2
+mem-access 2 3
+mem-access 2 0
+mem-access 2 1
+
+# Proceso 3: Working set pequeño
+mem-access 3 0
+mem-access 3 1
+mem-access 3 0
+mem-access 3 1
+mem-access 3 0
+mem-access 3 1
+mem-access 3 0
+mem-access 3 1
+mem-access 3 0
+mem-access 3 1
+
+# Ver cómo PFF distribuyó los frames
+mem-pff-stats
+mem-frames
+
+# ----------------------------------------------------------------------------
+# CONCLUSIONES
+# ----------------------------------------------------------------------------
+#
+# PFF (Page Fault Frequency) es superior a FIFO y LRU porque:
+#
+# 1. ADAPTACIÓN DINÁMICA:
+#    - Ajusta frames según comportamiento real del proceso
+#    - No usa política fija de reemplazo
+#
+# 2. PREVENCIÓN DE THRASHING:
+#    - Si tasa de fallos es alta → asigna más frames
+#    - Evita que proceso entre en thrashing
+#
+# 3. EFICIENCIA EN MULTIPROCESAMIENTO:
+#    - Procesos con locality bueno liberan frames
+#    - Frames van a procesos que los necesitan más
+#
+# 4. WORKING SET AUTOMÁTICO:
+#    - No requiere que programador especifique working set
+#    - Se calcula automáticamente por observación
+#
+# TRADE-OFFS:
+# - Mayor complejidad de implementación
+# - Overhead de tracking por proceso
+# - Requiere configuración de umbrales (pero son robustos)
+#
+# ============================================================================
