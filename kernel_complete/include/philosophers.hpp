@@ -2,7 +2,6 @@
 #define PHILOSOPHERS_HPP
 
 #include <mutex>
-#include <vector>
 #include <array>
 #include <string>
 
@@ -50,21 +49,20 @@ private:
     static constexpr int NUM_PHILOSOPHERS = 5;
 
     std::array<Philosopher, NUM_PHILOSOPHERS> philosophers_;
-    std::array<std::mutex, NUM_PHILOSOPHERS> forks_;     // Mutex por cada tenedor
     std::array<bool, NUM_PHILOSOPHERS> fork_in_use_;     // Fork está en uso?
     std::array<int, NUM_PHILOSOPHERS> fork_holder_;      // Quién tiene el fork (-1 si libre)
 
     int step_count_;                   // Contador de pasos de simulación
     int total_meals_;                  // Total de comidas
     int deadlock_count_;               // Veces que se detectó deadlock potencial
+    int consecutive_all_hungry_;       // Contador de pasos consecutivos con todos hambrientos
 
     mutable std::mutex simulation_mutex_;  // Mutex para la simulación
 
     // Helpers internos
     void philosopher_action(int id);
-    bool try_acquire_forks(int id);
     void release_forks(int id);
-    bool check_deadlock() const;
+    bool check_deadlock();
 
     // Estrategia asimétrica para prevenir deadlock
     // Filósofos pares: izquierda primero

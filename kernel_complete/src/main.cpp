@@ -1,6 +1,7 @@
 #include "../include/scheduler.hpp"
 #include "../include/memory.hpp"
 #include "../include/sync.hpp"
+#include "../include/philosophers.hpp"
 #include "../include/utils.hpp"
 #include <iostream>
 #include <sstream>
@@ -60,6 +61,16 @@ void print_help()
     std::cout << "  pc-reset          - Reiniciar buffer\n";
 
     std::cout << "\n"
+              << Color::YELLOW << " DINING PHILOSOPHERS " << Color::RESET << std::endl;
+    std::cout << "  phil-init         - Inicializar simulación de filósofos\n";
+    std::cout << "  phil-step         - Avanzar un paso de simulación\n";
+    std::cout << "  phil-run <n>      - Avanzar N pasos\n";
+    std::cout << "  phil-table        - Mostrar mesa y estados\n";
+    std::cout << "  phil-stats        - Mostrar estadísticas acumuladas\n";
+    std::cout << "  phil-forks        - Mostrar tenedores\n";
+    std::cout << "  phil-reset        - Reiniciar simulación\n";
+
+    std::cout << "\n"
               << Color::YELLOW << " GENERAL " << Color::RESET << std::endl;
     std::cout << "  help              - Mostrar esta ayuda\n";
     std::cout << "  clear             - Limpiar pantalla\n";
@@ -75,6 +86,7 @@ int main()
     std::unique_ptr<IScheduler> scheduler = nullptr;
     std::unique_ptr<MemoryManager> memory = nullptr;
     std::unique_ptr<ProducerConsumer> pc_buffer = nullptr;
+    std::unique_ptr<DiningPhilosophers> philosophers = nullptr;
 
     // Configuración por defecto: Round Robin (q=3)
     int default_quantum = 3;
@@ -444,6 +456,95 @@ int main()
                 else
                 {
                     pc_buffer->reset();
+                }
+            }
+
+            //  DINING PHILOSOPHERS
+            else if (command == "phil-init")
+            {
+                philosophers = std::make_unique<DiningPhilosophers>();
+                std::cout << Color::GREEN << "[PHIL] Simulación inicializada (5 filósofos)"
+                          << Color::RESET << std::endl;
+            }
+            else if (command == "phil-step")
+            {
+                if (!philosophers)
+                {
+                    std::cout << Color::RED << "Error: Inicializa con phil-init"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    philosophers->simulate_step();
+                }
+            }
+            else if (command == "phil-run")
+            {
+                if (!philosophers)
+                {
+                    std::cout << Color::RED << "Error: Inicializa con phil-init"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    int n;
+                    if (iss >> n && n > 0)
+                    {
+                        philosophers->simulate_steps(n);
+                    }
+                    else
+                    {
+                        std::cout << Color::RED << "Uso: phil-run <n>"
+                                  << Color::RESET << std::endl;
+                    }
+                }
+            }
+            else if (command == "phil-table")
+            {
+                if (!philosophers)
+                {
+                    std::cout << Color::RED << "Error: Inicializa con phil-init"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    philosophers->display_table();
+                }
+            }
+            else if (command == "phil-stats")
+            {
+                if (!philosophers)
+                {
+                    std::cout << Color::RED << "Error: Inicializa con phil-init"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    philosophers->display_stats();
+                }
+            }
+            else if (command == "phil-forks")
+            {
+                if (!philosophers)
+                {
+                    std::cout << Color::RED << "Error: Inicializa con phil-init"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    philosophers->display_forks();
+                }
+            }
+            else if (command == "phil-reset")
+            {
+                if (!philosophers)
+                {
+                    std::cout << Color::RED << "Error: Inicializa con phil-init"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    philosophers->reset();
                 }
             }
 
