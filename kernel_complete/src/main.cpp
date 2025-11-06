@@ -14,7 +14,7 @@ void print_banner()
 ║        SIMULADOR DE KERNEL - SISTEMA OPERATIVO           ║
 ║                                                          ║
 ║  Módulos:                                                ║
-║    • CPU Scheduling (Round Robin)                        ║
+║    • CPU Scheduling (Round Robin / SJF)                  ║
 ║    • Memory Management (FIFO)                            ║
 ║    • Synchronization (Producer-Consumer)                 ║
 ║                                                          ║
@@ -28,6 +28,8 @@ void print_help()
     print_header("COMANDOS DISPONIBLES");
 
     std::cout << Color::YELLOW << " CPU SCHEDULING " << Color::RESET << std::endl;
+    std::cout << "  cpu-rr <q>        - Usar Round Robin con quantum q\n";
+    std::cout << "  cpu-sjf           - Usar SJF no expropiativo\n";
     std::cout << "  new <burst>       - Crear proceso con tiempo de ráfaga\n";
     std::cout << "  ps                - Listar todos los procesos\n";
     std::cout << "  tick              - Ejecutar 1 tick\n";
@@ -66,11 +68,11 @@ int main()
     print_banner();
 
     // Inicializar módulos
-    std::unique_ptr<RoundRobinScheduler> scheduler = nullptr;
+    std::unique_ptr<IScheduler> scheduler = nullptr;
     std::unique_ptr<MemoryManager> memory = nullptr;
     std::unique_ptr<ProducerConsumer> pc_buffer = nullptr;
 
-    // Configuración por defecto
+    // Configuración por defecto: Round Robin (q=3)
     int default_quantum = 3;
     scheduler = std::make_unique<RoundRobinScheduler>(default_quantum);
     std::cout << Color::GREEN << "[CPU] Scheduler Round Robin inicializado (quantum="
@@ -108,6 +110,28 @@ int main()
             {
                 system("clear || cls");
                 print_banner();
+            }
+
+            //  CAMBIO DE ALGORITMO DE CPU
+            else if (command == "cpu-rr")
+            {
+                int q;
+                if (iss >> q && q > 0)
+                {
+                    scheduler = std::make_unique<RoundRobinScheduler>(q);
+                    std::cout << Color::GREEN << "[CPU] Cambiado a Round Robin (q=" << q << ")"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: cpu-rr <quantum>" << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "cpu-sjf")
+            {
+                scheduler = std::make_unique<SJFScheduler>();
+                std::cout << Color::GREEN << "[CPU] Cambiado a SJF (no expropiativo)"
+                          << Color::RESET << std::endl;
             }
 
             //  CPU SCHEDULING
@@ -300,7 +324,7 @@ int main()
                 int item;
                 if (pc_buffer->consume(item))
                 {
-                    // Éxito ya reportado en la función
+                    // Mensaje ya mostrado dentro de consume()
                 }
             }
             else if (command == "pc-buffer")
