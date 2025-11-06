@@ -15,7 +15,7 @@ void print_banner()
 ║                                                          ║
 ║  Módulos:                                                ║
 ║    • CPU Scheduling (Round Robin / SJF)                  ║
-║    • Memory Management (FIFO)                            ║
+║    • Memory Management (FIFO / LRU)                      ║
 ║    • Synchronization (Producer-Consumer)                 ║
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
@@ -39,12 +39,13 @@ void print_help()
 
     std::cout << "\n"
               << Color::YELLOW << " MEMORY MANAGEMENT " << Color::RESET << std::endl;
-    std::cout << "  mem-init <frames> - Inicializar memoria\n";
-    std::cout << "  mem-access <pid> <page> - Acceder a página\n";
-    std::cout << "  mem-frames        - Ver estado de frames\n";
-    std::cout << "  mem-table <pid>   - Ver page table de proceso\n";
-    std::cout << "  mem-stats         - Estadísticas de memoria\n";
-    std::cout << "  mem-reset         - Reiniciar estadísticas\n";
+    std::cout << "  mem-init <frames> [fifo|lru] - Inicializar memoria (por defecto FIFO)\n";
+    std::cout << "  mem-policy <fifo|lru>        - Cambiar política de reemplazo\n";
+    std::cout << "  mem-access <pid> <page>      - Acceder a página\n";
+    std::cout << "  mem-frames                   - Ver estado de frames\n";
+    std::cout << "  mem-table <pid>              - Ver page table de proceso\n";
+    std::cout << "  mem-stats                    - Estadísticas de memoria\n";
+    std::cout << "  mem-reset                    - Reiniciar estadísticas\n";
 
     std::cout << "\n"
               << Color::YELLOW << " SYNCHRONIZATION " << Color::RESET << std::endl;
@@ -190,15 +191,53 @@ int main()
             //  MEMORY MANAGEMENT
             else if (command == "mem-init")
             {
-                int frames;
-                if (iss >> frames && frames > 0)
+                int frames; std::string pol;
+                if ((iss >> frames) && frames > 0)
                 {
-                    memory = std::make_unique<MemoryManager>(frames);
+                    if (iss >> pol)
+                    {
+                        if (pol == "fifo" || pol == "FIFO")
+                            memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::FIFO);
+                        else if (pol == "lru" || pol == "LRU")
+                            memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::LRU);
+                        else
+                        {
+                            std::cout << Color::YELLOW << "Política no reconocida, usando FIFO"
+                                      << Color::RESET << std::endl;
+                            memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::FIFO);
+                        }
+                    }
+                    else
+                    {
+                        memory = std::make_unique<MemoryManager>(frames, ReplacementPolicy::FIFO);
+                    }
                 }
                 else
                 {
-                    std::cout << Color::RED << "Error: frames debe ser > 0"
+                    std::cout << Color::RED << "Uso: mem-init <frames> [fifo|lru]"
                               << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "mem-policy")
+            {
+                if (!memory)
+                {
+                    std::cout << Color::RED << "Error: Memoria no inicializada"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    std::string pol;
+                    if (iss >> pol)
+                    {
+                        if (pol == "fifo" || pol == "FIFO") memory->set_policy(ReplacementPolicy::FIFO);
+                        else if (pol == "lru" || pol == "LRU") memory->set_policy(ReplacementPolicy::LRU);
+                        else std::cout << Color::RED << "Uso: mem-policy <fifo|lru>" << Color::RESET << std::endl;
+                    }
+                    else
+                    {
+                        std::cout << Color::RED << "Uso: mem-policy <fifo|lru>" << Color::RESET << std::endl;
+                    }
                 }
             }
             else if (command == "mem-access")
