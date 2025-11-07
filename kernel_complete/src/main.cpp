@@ -2,6 +2,9 @@
 #include "../include/memory.hpp"
 #include "../include/sync.hpp"
 #include "../include/philosophers.hpp"
+#include "../include/io.hpp"
+#include "../include/heap.hpp"
+#include "../include/disk.hpp"
 #include "../include/utils.hpp"
 #include <iostream>
 #include <sstream>
@@ -71,6 +74,33 @@ void print_help()
     std::cout << "  phil-reset        - Reiniciar simulación\n";
 
     std::cout << "\n"
+              << Color::YELLOW << " IO DEVICES " << Color::RESET << std::endl;
+    std::cout << "  io-init <name> <spool>   - Registrar dispositivo con spool limitado\n";
+    std::cout << "  io-devices               - Listar dispositivos y estado\n";
+    std::cout << "  io-device <name>         - Ver detalle de un dispositivo\n";
+    std::cout << "  io-request <dev> <pid> <dur> <prio> - Solicitar I/O (bloquea proceso)\n";
+    std::cout << "  io-run <ticks>           - Procesar I/O durante N ticks\n";
+    std::cout << "  io-reset                 - Reiniciar estado de I/O\n";
+
+    std::cout << "\n"
+              << Color::YELLOW << " HEAP ALLOCATOR " << Color::RESET << std::endl;
+    std::cout << "  heap-init <total> <min>  - Inicializar buddy allocator\n";
+    std::cout << "  heap-alloc <bytes>       - Solicitar bloque\n";
+    std::cout << "  heap-free <id>           - Liberar bloque\n";
+    std::cout << "  heap-stats               - Ver estadísticas de heap\n";
+
+    std::cout << "\n"
+              << Color::YELLOW << " DISK SCHEDULER " << Color::RESET << std::endl;
+    std::cout << "  disk-init <tracks>       - Inicializar disco\n";
+    std::cout << "  disk-head <pos>          - Mover cabezal a cilindro\n";
+    std::cout << "  disk-queue <c1> <c2>...  - Definir cola de peticiones\n";
+    std::cout << "  disk-add <c>             - Agregar solicitud individual\n";
+    std::cout << "  disk-run <fcfs|sstf|scan|scan-down> - Ejecutar algoritmo\n";
+    std::cout << "  disk-stats               - Mostrar métricas\n";
+    std::cout << "  disk-view                - Vista de cilindros y cabezal\n";
+    std::cout << "  disk-reset               - Limpiar estado\n";
+
+    std::cout << "\n"
               << Color::YELLOW << " GENERAL " << Color::RESET << std::endl;
     std::cout << "  help              - Mostrar esta ayuda\n";
     std::cout << "  clear             - Limpiar pantalla\n";
@@ -87,6 +117,9 @@ int main()
     std::unique_ptr<MemoryManager> memory = nullptr;
     std::unique_ptr<ProducerConsumer> pc_buffer = nullptr;
     std::unique_ptr<DiningPhilosophers> philosophers = nullptr;
+    std::unique_ptr<IOManager> io_manager = std::make_unique<IOManager>();
+    std::unique_ptr<BuddyAllocator> heap = nullptr;
+    std::unique_ptr<DiskScheduler> disk = std::make_unique<DiskScheduler>();
 
     // Configuración por defecto: Round Robin (q=3)
     int default_quantum = 3;
@@ -546,6 +579,282 @@ int main()
                 {
                     philosophers->reset();
                 }
+            }
+
+            //  IO DEVICES
+            else if (command == "io-init")
+            {
+                std::string name;
+                int spool;
+                if (iss >> name >> spool)
+                {
+                    io_manager->add_device(name, spool);
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: io-init <name> <spool>"
+                              << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "io-devices")
+            {
+                io_manager->display_status();
+            }
+            else if (command == "io-device")
+            {
+                std::string name;
+                if (iss >> name)
+                {
+                    io_manager->display_device(name);
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: io-device <name>"
+                              << Color::RESET << std::endl;
+                }
+            }
+    else if (command == "io-request")
+    {
+        std::string device;
+        int pid, duration, priority;
+        if (!(iss >> device >> pid >> duration >> priority))
+        {
+            std::cout << Color::RED << "Uso: io-request <dev> <pid> <dur> <prio>"
+                      << Color::RESET << std::endl;
+            continue;
+        }
+
+        if (!io_manager->device_exists(device))
+        {
+            std::cout << Color::RED << "[IO] Dispositivo no registrado"
+                      << Color::RESET << std::endl;
+            continue;
+        }
+
+        if (!scheduler)
+        {
+            std::cout << Color::RED << "[IO] Scheduler no inicializado"
+                      << Color::RESET << std::endl;
+            continue;
+        }
+
+        // Aquí preferimos suspender primero para que, si se llena el spool,
+        // podamos revertir el bloqueo y dejar al proceso en READY.
+        if (!scheduler->suspend_process(pid))
+        {
+            continue;
+        }
+
+                std::string error;
+                if (!io_manager->submit_request(device, pid, duration, priority, error))
+                {
+                    std::cout << Color::RED << "[IO] " << error
+                              << Color::RESET << std::endl;
+                    scheduler->resume_process(pid);
+                }
+            }
+            else if (command == "io-run")
+            {
+                int ticks;
+                if (!(iss >> ticks) || ticks <= 0)
+                {
+                    std::cout << Color::RED << "Uso: io-run <ticks> (ticks > 0)"
+                              << Color::RESET << std::endl;
+                    continue;
+                }
+
+                auto completions = io_manager->process_ticks(ticks);
+                if (completions.empty())
+                {
+                    std::cout << Color::YELLOW << "[IO] No se completó ninguna solicitud"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    for (const auto& completion : completions)
+                    {
+                        int pid = completion.first;
+                        const std::string& dev_name = completion.second;
+                        std::cout << Color::GREEN << "[IO] " << dev_name
+                                  << " completó trabajo de P" << pid
+                                  << Color::RESET << std::endl;
+                        scheduler->resume_process(pid);
+                    }
+                }
+            }
+            else if (command == "io-reset")
+            {
+                io_manager->reset();
+            }
+
+            //  HEAP ALLOCATOR
+            else if (command == "heap-init")
+            {
+                size_t total, min_block;
+                if (iss >> total >> min_block)
+                {
+                    heap = std::make_unique<BuddyAllocator>();
+                    heap->init(total, min_block);
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: heap-init <total> <min>"
+                              << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "heap-alloc")
+            {
+                if (!heap)
+                {
+                    std::cout << Color::RED << "Error: Primero heap-init"
+                              << Color::RESET << std::endl;
+                    continue;
+                }
+
+                size_t bytes;
+                if (iss >> bytes)
+                {
+                    heap->alloc(bytes);
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: heap-alloc <bytes>"
+                              << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "heap-free")
+            {
+                if (!heap)
+                {
+                    std::cout << Color::RED << "Error: Primero heap-init"
+                              << Color::RESET << std::endl;
+                    continue;
+                }
+
+                int alloc_id;
+                if (iss >> alloc_id)
+                {
+                    heap->free(alloc_id);
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: heap-free <id>"
+                              << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "heap-stats")
+            {
+                if (!heap)
+                {
+                    std::cout << Color::RED << "Error: Primero heap-init"
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    heap->display_stats();
+                }
+            }
+
+            //  DISK SCHEDULER
+            else if (command == "disk-init")
+            {
+                int tracks;
+                if (iss >> tracks)
+                {
+                    disk->init(tracks);
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: disk-init <tracks>"
+                              << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "disk-head")
+            {
+                int pos;
+                if (iss >> pos)
+                {
+                    disk->set_head(pos);
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: disk-head <pos>"
+                              << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "disk-queue")
+            {
+                std::vector<int> queue;
+                int cyl;
+                while (iss >> cyl)
+                {
+                    queue.push_back(cyl);
+                }
+
+                if (queue.empty())
+                {
+                    std::cout << Color::RED << "Uso: disk-queue <c1> <c2> ..."
+                              << Color::RESET << std::endl;
+                }
+                else
+                {
+                    disk->set_queue(queue);
+                }
+            }
+            else if (command == "disk-add")
+            {
+                int cyl;
+                if (iss >> cyl)
+                {
+                    disk->add_request(cyl);
+                }
+                else
+                {
+                    std::cout << Color::RED << "Uso: disk-add <cilindro>"
+                              << Color::RESET << std::endl;
+                }
+            }
+            else if (command == "disk-run")
+            {
+                std::string algo;
+                if (!(iss >> algo))
+                {
+                    std::cout << Color::RED << "Uso: disk-run <fcfs|sstf|scan|scan-down>"
+                              << Color::RESET << std::endl;
+                    continue;
+                }
+
+                DiskAlgorithm alg;
+                if (algo == "fcfs")
+                    alg = DiskAlgorithm::FCFS;
+                else if (algo == "sstf")
+                    alg = DiskAlgorithm::SSTF;
+                else if (algo == "scan")
+                    alg = DiskAlgorithm::SCAN_UP;
+                else if (algo == "scan-down")
+                    alg = DiskAlgorithm::SCAN_DOWN;
+                else
+                {
+                    std::cout << Color::RED << "Algoritmo no válido"
+                              << Color::RESET << std::endl;
+                    continue;
+                }
+
+                // Dejamos que el módulo de disco se encargue del cálculo;
+                // la CLI solo valida el nombre del algoritmo.
+                disk->run(alg);
+            }
+            else if (command == "disk-stats")
+            {
+                disk->display_stats();
+            }
+            else if (command == "disk-view")
+            {
+                disk->display_view();
+            }
+            else if (command == "disk-reset")
+            {
+                disk->reset();
             }
 
             //  COMANDO DESCONOCIDO

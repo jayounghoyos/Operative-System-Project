@@ -1,0 +1,14 @@
+# ===================== CPU: Round Robin vs SJF =====================
+clear
+new 6
+new 4
+run 8
+cpu-stats
+
+cpu-sjf
+new 6
+new 4
+run 8
+cpu-stats
+
+exit

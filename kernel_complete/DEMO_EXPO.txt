@@ -1,0 +1,177 @@
+# ===================== DEMO EXPO =====================
+# Anoto los comandos en el orden en que pienso mostrarlos
+# Cada bloque se enfoca en un módulo diferente
+
+
+# --------- Panorama general ---------
+# Muestro la ayuda para presentar los subsistemas disponibles
+help
+
+
+# --------- CPU Scheduling ---------
+# Creo dos procesos iniciales para trabajar con Round Robin
+new 6
+new 4
+
+# Listo el estado inicial de la cola
+ps
+
+# Avanzo un tick para que arranque el primer proceso
+tick
+
+# Suspendo el proceso uno para explicar el estado BLOCKED
+suspend 1
+
+# Verifico que el proceso uno aparece bloqueado
+ps
+
+# Reanudo el proceso uno y preparo a la audiencia para el run
+resume 1
+
+# Ejecuto cinco ticks de golpe y observo la salida
+run 5
+
+# Reviso las estadísticas con waits y turnarounds
+cpu-stats
+
+# Cambio a SJF y enseño la diferencia en la cola
+cpu-sjf
+ps
+
+
+# --------- Memoria Virtual ---------
+# Inicio la memoria con cinco marcos en FIFO
+mem-init 5 fifo
+
+# Provoco accesos alternando dos procesos para detonar fallos y hits
+mem-access 1 0
+mem-access 1 1
+mem-access 2 0
+mem-access 1 2
+mem-access 2 1
+
+# Muestro el estado de los marcos con la política FIFO
+mem-frames
+
+# Cambio la política a LRU y repito algunos accesos
+mem-policy lru
+mem-access 1 0
+mem-access 1 3
+mem-access 2 0
+
+# Vuelvo a mostrar los marcos para resaltar el efecto de LRU
+mem-frames
+
+# Activo PFF para introducir la gestión avanzada
+mem-policy pff
+
+# Genero una ventana con diez accesos del proceso uno
+mem-access 1 0
+mem-access 1 1
+mem-access 1 2
+mem-access 1 3
+mem-access 1 4
+mem-access 1 5
+mem-access 1 6
+mem-access 1 7
+mem-access 1 8
+mem-access 1 9
+
+# Consulto las estadísticas de PFF y la asignación dinámica
+mem-pff-stats
+mem-frames
+
+
+# --------- Productor Consumidor ---------
+# Inicializo un buffer de tamaño cuatro
+pc-init 4
+
+# Produzco dos elementos para demostrar el flujo de entrada
+produce 10
+produce 20
+
+# Consumo un elemento y muestro el mensaje del consumidor
+consume
+
+# Visualizo el buffer y los indicadores de posiciones
+pc-buffer
+
+# Muestro estadísticas con bloqueos y totales
+pc-stats
+
+
+# --------- Cena de los Filósofos ---------
+# Cargo la simulación de filósofos
+phil-init
+
+# Presento la mesa en el estado inicial
+phil-table
+
+# Avanzo un paso para mostrar transiciones y contadores
+phil-step
+
+# Ejecuto tres pasos adicionales para generar comidas y bloqueos
+phil-run 3
+
+# Reviso estadísticas acumuladas
+phil-stats
+
+# Muestro qué tenedores están en uso y por quién
+phil-forks
+
+# Reinicio la simulación para cerrar el módulo
+phil-reset
+phil-table
+
+# --------- Entrada/Salida (I/O Manager) ---------
+# Registro un dispositivo con spool pequeño para mostrar la cola
+io-init printer 2
+
+# Creo dos procesos y hago que uno solicite I/O
+new 8
+new 5
+io-request printer 1 3 2
+
+# Muestro el estado de los dispositivos
+io-devices
+io-device printer
+
+# Avanzo el tiempo para completar la solicitud y mostrar la reanudación
+run 3
+io-run 3
+ps
+
+# --------- Buddy Allocator ---------
+# Inicializo el heap y hago tres allocs para mostrar fragmentación
+heap-init 1024 32
+heap-alloc 100
+heap-alloc 200
+heap-alloc 50
+heap-stats
+
+# Libero bloques para evidenciar el merge de buddies
+heap-free 2
+heap-free 3
+heap-free 1
+heap-stats
+
+# --------- Planificación de Disco ---------
+# Configuro la cantidad de cilindros y la cola ejemplo
+disk-init 50
+disk-head 10
+disk-queue 10 22 20 2 40 6 38
+
+# Ejecuto FCFS, SSTF y SCAN mostrando el movimiento total
+disk-run fcfs
+disk-stats
+disk-run sstf
+disk-stats
+disk-run scan
+disk-stats
+
+# Visualizo la línea de cilindros + cabezal
+disk-view
+
+# --------- Cierre ---------
+# Regreso a la ayuda por si alguien pide repaso de comandos
+help

@@ -1,0 +1,27 @@
+# ===================== MEMORIA: FIFO vs LRU =====================
+# Ejecutar con: ./kernel_complete/kernel-sim < scripts/mem_fifo_vs_lru.txt
+
+clear
+mem-init 5 fifo
+mem-access 1 0
+mem-access 1 1
+mem-access 2 0
+mem-access 1 2
+mem-access 1 3
+mem-access 2 1
+mem-access 2 3
+mem-frames
+mem-stats
+
+mem-policy lru
+mem-access 1 0
+mem-access 1 1
+mem-access 2 0
+mem-access 1 2
+mem-access 1 3
+mem-access 2 1
+mem-access 2 3
+mem-frames
+mem-stats
+
+exit

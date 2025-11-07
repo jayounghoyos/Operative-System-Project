@@ -1,0 +1,18 @@
+# ===================== DISK: FCFS / SSTF / SCAN =====================
+clear
+disk-init 50
+disk-head 10
+disk-queue 10 22 20 2 40 6 38
+
+disk-run fcfs
+disk-stats
+
+disk-run sstf
+disk-stats
+
+disk-run scan
+disk-stats
+
+disk-view
+
+exit

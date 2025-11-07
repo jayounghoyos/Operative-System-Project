@@ -194,14 +194,14 @@ void RoundRobinScheduler::kill_process(int pid) {
     }
 }
 
-void RoundRobinScheduler::suspend_process(int pid) {
+bool RoundRobinScheduler::suspend_process(int pid) {
     auto it = std::find_if(processes_.begin(), processes_.end(),
                            [pid](const auto& p) { return p->get_pid() == pid; });
 
     if (it == processes_.end()) {
         std::cout << Color::RED << "[ERROR] Proceso P" << pid
                   << " no encontrado" << Color::RESET << std::endl;
-        return;
+        return false;
     }
 
     auto& proc = *it;
@@ -210,12 +210,12 @@ void RoundRobinScheduler::suspend_process(int pid) {
     if (state == ProcessState::TERMINATED) {
         std::cout << Color::YELLOW << "[WARN] Proceso P" << pid
                   << " ya terminó; no se puede suspender" << Color::RESET << std::endl;
-        return;
+        return false;
     }
     if (state == ProcessState::BLOCKED) {
         std::cout << Color::YELLOW << "[WARN] Proceso P" << pid
                   << " ya está suspendido" << Color::RESET << std::endl;
-        return;
+        return false;
     }
 
     if (state == ProcessState::RUNNING) {
@@ -244,16 +244,17 @@ void RoundRobinScheduler::suspend_process(int pid) {
         std::cout << Color::BLUE << "[SUSPEND] P" << pid
                   << " marcado como suspendido" << Color::RESET << std::endl;
     }
+    return true;
 }
 
-void RoundRobinScheduler::resume_process(int pid) {
+bool RoundRobinScheduler::resume_process(int pid) {
     auto it = std::find_if(processes_.begin(), processes_.end(),
                            [pid](const auto& p) { return p->get_pid() == pid; });
 
     if (it == processes_.end()) {
         std::cout << Color::RED << "[ERROR] Proceso P" << pid
                   << " no encontrado" << Color::RESET << std::endl;
-        return;
+        return false;
     }
 
     auto& proc = *it;
@@ -262,12 +263,12 @@ void RoundRobinScheduler::resume_process(int pid) {
     if (state == ProcessState::TERMINATED) {
         std::cout << Color::YELLOW << "[WARN] Proceso P" << pid
                   << " ya terminó; no se puede reanudar" << Color::RESET << std::endl;
-        return;
+        return false;
     }
     if (state != ProcessState::BLOCKED) {
         std::cout << Color::YELLOW << "[WARN] Proceso P" << pid
                   << " no está suspendido" << Color::RESET << std::endl;
-        return;
+        return false;
     }
 
     proc->set_state(ProcessState::READY);
@@ -275,6 +276,7 @@ void RoundRobinScheduler::resume_process(int pid) {
 
     std::cout << Color::GREEN << "[RESUME] P" << pid
               << " reanudado y enviado a READY" << Color::RESET << std::endl;
+    return true;
 }
 
 
@@ -422,14 +424,14 @@ void SJFScheduler::kill_process(int pid) {
               << " terminado forzosamente (SJF)" << Color::RESET << std::endl;
 }
 
-void SJFScheduler::suspend_process(int pid) {
+bool SJFScheduler::suspend_process(int pid) {
     auto it = std::find_if(processes_.begin(), processes_.end(),
                            [pid](const auto& p){ return p->get_pid() == pid; });
 
     if (it == processes_.end()) {
         std::cout << Color::RED << "[ERROR] Proceso P" << pid
                   << " no encontrado" << Color::RESET << std::endl;
-        return;
+        return false;
     }
 
     auto& proc = *it;
@@ -438,12 +440,12 @@ void SJFScheduler::suspend_process(int pid) {
     if (state == ProcessState::TERMINATED) {
         std::cout << Color::YELLOW << "[WARN] Proceso P" << pid
                   << " ya terminó; no se puede suspender" << Color::RESET << std::endl;
-        return;
+        return false;
     }
     if (state == ProcessState::BLOCKED) {
         std::cout << Color::YELLOW << "[WARN] Proceso P" << pid
                   << " ya está suspendido" << Color::RESET << std::endl;
-        return;
+        return false;
     }
 
     if (state == ProcessState::RUNNING) {
@@ -470,16 +472,17 @@ void SJFScheduler::suspend_process(int pid) {
         std::cout << Color::BLUE << "[SUSPEND] P" << pid
                   << " marcado como suspendido (SJF)" << Color::RESET << std::endl;
     }
+    return true;
 }
 
-void SJFScheduler::resume_process(int pid) {
+bool SJFScheduler::resume_process(int pid) {
     auto it = std::find_if(processes_.begin(), processes_.end(),
                            [pid](const auto& p){ return p->get_pid() == pid; });
 
     if (it == processes_.end()) {
         std::cout << Color::RED << "[ERROR] Proceso P" << pid
                   << " no encontrado" << Color::RESET << std::endl;
-        return;
+        return false;
     }
 
     auto& proc = *it;
@@ -488,12 +491,12 @@ void SJFScheduler::resume_process(int pid) {
     if (state == ProcessState::TERMINATED) {
         std::cout << Color::YELLOW << "[WARN] Proceso P" << pid
                   << " ya terminó; no se puede reanudar" << Color::RESET << std::endl;
-        return;
+        return false;
     }
     if (state != ProcessState::BLOCKED) {
         std::cout << Color::YELLOW << "[WARN] Proceso P" << pid
                   << " no está suspendido" << Color::RESET << std::endl;
-        return;
+        return false;
     }
 
     proc->set_state(ProcessState::READY);
@@ -501,4 +504,5 @@ void SJFScheduler::resume_process(int pid) {
 
     std::cout << Color::GREEN << "[RESUME] P" << pid
               << " reanudado y enviado a READY (SJF)" << Color::RESET << std::endl;
+    return true;
 }
