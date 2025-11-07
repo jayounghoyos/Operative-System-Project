@@ -15,6 +15,9 @@ set(SOURCES
     src/scheduler.cpp
     src/memory.cpp
     src/sync.cpp
+    src/io.cpp
+    src/disk.cpp
+    src/heap.cpp
     src/philosophers.cpp
     src/main.cpp
 )

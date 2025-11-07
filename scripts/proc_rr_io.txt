@@ -1,0 +1,12 @@
+# ===================== CPU + I/O =====================
+clear
+new 8
+new 6
+io-init printer 3
+io-request printer 1 3 2
+run 5
+io-run 3
+cpu-stats
+ps
+
+exit
